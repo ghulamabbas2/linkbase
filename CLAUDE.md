@@ -36,3 +36,14 @@ Next.js **App Router** project. All application code lives under `app/`:
 Styling is **Tailwind CSS v4**, configured entirely in CSS (no `tailwind.config.js`). `app/globals.css` uses `@import "tailwindcss"` and an `@theme inline` block to map CSS variables (background/foreground colors, fonts) into Tailwind's theme. Dark mode is driven by `prefers-color-scheme`. PostCSS wires this up via `@tailwindcss/postcss` in `postcss.config.mjs`.
 
 TypeScript path alias: `@/*` maps to the repo root (see `tsconfig.json`).
+
+## Doc Convention
+
+Whenever a new file is created in `/docs`, add it to the **Project Docs** section below with one line on what it covers and when to read it.
+
+### Project Docs
+
+- `docs/design-system.md` — design tokens (fonts, colors, spacing, radii) mapped to CSS variables and their Next.js/Tailwind usage. Read before styling anything or touching theme values.
+- `docs/ui.md` — component reference (buttons, inputs, etc.) with props, variants, and states from the design system source. Read before building or modifying UI components.
+- `docs/architecture.md` — directory layout, the Server/Client Component model, and file/component/Server Action naming conventions. Read before adding files or deciding where code belongs.
+- `docs/database.md` — MongoDB/Mongoose setup: cached connection helper, model conventions (strict mode, timestamps, `userId`/`handle` indexes), and mandatory per-user query scoping. Read before writing any data-access code or Server Action that touches the database.
