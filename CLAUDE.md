@@ -14,6 +14,12 @@ This project pins a specific Next.js version (`next@16.2.12`, React 19) that may
 
 Heed deprecation notices in those docs. Do not assume APIs, conventions, or file structure from memory.
 
+## Live Docs (Context7)
+
+Before writing code that uses Next.js, Mongoose, NextAuth, Zod, or any other third-party library, pull the current docs through Context7 first. Do not rely on training data for API signatures, configuration, or version-specific behavior — resolve the library and fetch its docs, then write the code against what those docs say.
+
+If Context7 has no entry for a library, say so explicitly before proceeding on training-data knowledge.
+
 ## Commands
 
 ```bash
