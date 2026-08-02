@@ -10,7 +10,15 @@ import { authConfig } from "./config";
 
 // Full auth instance (Node runtime). Extends the edge-safe config with the
 // Credentials provider whose `authorize` reads MongoDB and verifies the hash.
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut,
+  // Refreshes the JWT (fires the `jwt` callback with `trigger: "update"`); the
+  // onboarding action calls it after saving the handle so the proxy sees it.
+  unstable_update: updateSession,
+} = NextAuth({
   ...authConfig,
   providers: [
     Credentials({

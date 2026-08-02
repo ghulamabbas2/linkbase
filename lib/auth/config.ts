@@ -1,8 +1,9 @@
 import type { NextAuthConfig } from "next-auth";
 
 // Public routes reachable without a session (docs/auth.md, docs/routing.md).
-// Everything else is deny-by-default.
-function isPublicPath(pathname: string): boolean {
+// Everything else is deny-by-default. Exported for the proxy, which owns the
+// route-gating logic (auth + onboarding redirects).
+export function isPublicPath(pathname: string): boolean {
   return (
     pathname === "/" ||
     pathname === "/sign-in" ||
@@ -19,20 +20,20 @@ export const authConfig = {
   session: { strategy: "jwt" },
   providers: [],
   callbacks: {
-    // Gates route access in middleware. Returning `false` on a protected route
-    // redirects to the sign-in page.
-    authorized({ auth, request: { nextUrl } }) {
-      if (isPublicPath(nextUrl.pathname)) return true;
-      return Boolean(auth?.user);
-    },
     // Copy identity onto the token at sign-in; it is then exposed on the session.
     // `user` is the loose provider/adapter union here, so read our fields off a
-    // narrowed shape (they are set by the Credentials `authorize` return).
-    jwt({ token, user }) {
+    // narrowed shape (they are set by the Credentials `authorize` return). On an
+    // `unstable_update` call the trigger is "update" and the new handle arrives in
+    // `session` — copy it over so the token (and the proxy) reflect the change.
+    jwt({ token, user, trigger, session }) {
       if (user) {
         const identity = user as { id?: string; handle?: string };
         token.id = identity.id;
         token.handle = identity.handle;
+      }
+      if (trigger === "update") {
+        const data = session as { user?: { handle?: string } } | undefined;
+        if (data?.user?.handle) token.handle = data.user.handle;
       }
       return token;
     },

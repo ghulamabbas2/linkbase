@@ -18,9 +18,12 @@ export type AuthActionState = {
   fieldErrors?: FieldErrors;
 };
 
-// Where users land after authenticating. Becomes the select-handle screen once
-// that (separate) feature ships.
-const POST_AUTH_REDIRECT = "/";
+// Where users land after authenticating. We send everyone to /onboarding rather
+// than relying on the proxy to bounce the sign-in redirect (the freshly-set
+// session cookie isn't reliably readable on that first hop). New users stay on
+// onboarding; the onboarding page's own server guard forwards handle-holders on
+// to /dashboard (docs/auth.md).
+const POST_AUTH_REDIRECT = "/onboarding";
 
 async function clientKey(): Promise<string> {
   const headerList = await headers();
