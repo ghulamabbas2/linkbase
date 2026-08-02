@@ -1,21 +1,37 @@
 import Link from "next/link";
 
+import { UserMenu } from "@/components/auth/user-menu";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "@/components/ui/wordmark";
+import { auth } from "@/lib/auth";
 
 import { HandleCtaForm } from "./handle-cta-form";
 
 const PREVIEW_LINKS = ["Latest work", "Shop prints", "Instagram"];
 
 // Chartreuse hero: nav, headline + username form, and a static product preview.
-export function LandingHero() {
+export async function LandingHero() {
+  const session = await auth();
+
   return (
     <section className="bg-chartreuse">
       <nav className="mx-auto flex max-w-[1120px] items-center justify-between gap-4 px-[clamp(20px,5vw,32px)] py-5">
         <Wordmark className="text-[26px] text-ink" />
-        <Button as={Link} href="/sign-up" variant="primary" size="sm">
-          Sign up free
-        </Button>
+        {session?.user ? (
+          <UserMenu
+            email={session.user.email ?? ""}
+            handle={session.user.handle}
+          />
+        ) : (
+          <div className="flex items-center gap-2">
+            <Button as={Link} href="/sign-in" variant="ghost" size="sm">
+              Log in
+            </Button>
+            <Button as={Link} href="/sign-up" variant="primary" size="sm">
+              Sign up free
+            </Button>
+          </div>
+        )}
       </nav>
 
       <div className="mx-auto grid max-w-[1120px] grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-center gap-[clamp(32px,5vw,56px)] px-[clamp(20px,5vw,32px)] pt-[clamp(28px,5vw,48px)] pb-[clamp(56px,8vw,90px)]">
