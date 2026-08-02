@@ -7,11 +7,14 @@ import { IconButton } from "@/components/ui/icon-button";
 
 interface ShareButtonProps {
   handle: string;
+  // Matches IconButton's sizes; the public profile uses a larger control than
+  // the dashboard preview.
+  size?: "sm" | "md" | "lg";
 }
 
 // Shares the user's public profile URL: native share sheet when available,
 // otherwise copies the link to the clipboard and shows brief confirmation.
-export function ShareButton({ handle }: ShareButtonProps) {
+export function ShareButton({ handle, size = "sm" }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -40,7 +43,7 @@ export function ShareButton({ handle }: ShareButtonProps) {
   return (
     <IconButton
       variant="white"
-      size="sm"
+      size={size}
       label={copied ? "Link copied" : "Share profile"}
       onClick={onShare}
     >
