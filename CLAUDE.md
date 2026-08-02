@@ -20,6 +20,16 @@ Before writing code that uses Next.js, Mongoose, NextAuth, Zod, or any other thi
 
 If Context7 has no entry for a library, say so explicitly before proceeding on training-data knowledge.
 
+## React / Next.js Performance (vercel-react-best-practices skill)
+
+Before writing, reviewing, or refactoring any React component, Next.js page/route, Server Action, data-fetching path, or client-side interaction code, invoke the `vercel-react-best-practices` skill and apply its guidance. It contains 70 impact-prioritized rules (eliminating waterfalls, bundle size, server/client data fetching, re-render and rendering performance). Prioritize the CRITICAL categories (`async-*` waterfalls, `bundle-*` size) first.
+
+Use it whenever you are:
+- Adding or changing a component, page, layout, or route
+- Implementing server- or client-side data fetching
+- Reviewing a diff for performance issues
+- Optimizing bundle size, load time, or re-renders
+
 ## Commands
 
 ```bash
@@ -61,3 +71,4 @@ Whenever a new file is created in `/docs`, add it to the **Project Docs** sectio
 - `docs/data-mutations.md` — write patterns: the ordered Server Action sequence (check session → validate with Zod → scope to `userId` → write → `revalidatePath`/`revalidateTag`) and the typed-result return that returns validation errors instead of throwing. Read before writing any Server Action that mutates data.
 - `docs/security.md` — baseline security: secrets in gitignored `.env.local` (`.env.example` as template), security headers (CSP, X-Frame-Options, Referrer-Policy) in `next.config.js`, rate limiting on sign-in and link creation, and safe handling of user-generated content (escape on render, `rel="noopener noreferrer"` on outbound links). Read before touching secrets, config headers, rate limiting, or rendering user content.
 - `docs/git-conventions.md` — Conventional Commits (`feat`/`fix`/`docs`/`refactor`/`test`/`chore` with imperative subjects), `type/feature` branch naming, and the branch-per-feature + PR-with-human-review workflow (never commit straight to `main`). Read before committing, branching, or opening a PR.
+- `docs/testing.md` — the two testing layers: Vitest unit tests (`*.test.ts` beside the file, for pure functions and Zod schemas) and Playwright MCP end-to-end QA via the `run-qa-suite` skill (no `/e2e`, no `playwright.config.ts`, no committed `.spec.ts`), run against a separate `MONGODB_URI_TEST` database with Server Actions tested unmocked and every test independent. Read before writing tests or QA.
