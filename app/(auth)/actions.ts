@@ -18,12 +18,15 @@ export type AuthActionState = {
   fieldErrors?: FieldErrors;
 };
 
-// Where users land after authenticating. We send everyone to /onboarding rather
-// than relying on the proxy to bounce the sign-in redirect (the freshly-set
-// session cookie isn't reliably readable on that first hop). New users stay on
-// onboarding; the onboarding page's own server guard forwards handle-holders on
-// to /dashboard (docs/auth.md).
-const POST_AUTH_REDIRECT = "/onboarding";
+// Where new users land after authenticating. Existing users are routed by handle
+// (see below). We resolve the destination here rather than relying on the proxy
+// to bounce the sign-in redirect (the freshly-set session cookie isn't reliably
+// readable on that first hop) — and, critically, rather than letting the
+// onboarding page re-redirect handle-holders: a Server Action redirect that
+// lands on a page which immediately redirects again renders the final page's
+// content while leaving the action's URL in the address bar (docs/auth.md).
+const ONBOARDING_REDIRECT = "/onboarding";
+const DASHBOARD_REDIRECT = "/dashboard";
 
 async function clientKey(): Promise<string> {
   const headerList = await headers();
@@ -76,11 +79,12 @@ export async function signUp(
     throw error;
   }
 
+  // Brand-new account: no handle yet, so always start onboarding.
   // Establishes the session and throws a redirect (handled by Next.js).
   await signIn("credentials", {
     email,
     password,
-    redirectTo: POST_AUTH_REDIRECT,
+    redirectTo: ONBOARDING_REDIRECT,
   });
 
   return {};
@@ -102,11 +106,19 @@ export async function signInWithCredentials(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
+  // Route existing users by onboarding state so the redirect lands directly on
+  // the right page (no chained page-level redirect). The handle lookup is only
+  // used to pick the destination; `signIn` still enforces the password, so an
+  // email that exists but fails auth never reaches the redirect.
+  await connectToDatabase();
+  const user = await User.findOne({ email: parsed.data.email }).select("handle");
+  const redirectTo = user?.handle ? DASHBOARD_REDIRECT : ONBOARDING_REDIRECT;
+
   try {
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: POST_AUTH_REDIRECT,
+      redirectTo,
     });
   } catch (error) {
     // Invalid credentials surface as an AuthError; return a generic message and
