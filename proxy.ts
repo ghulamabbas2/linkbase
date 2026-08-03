@@ -9,7 +9,10 @@ import { authConfig, isPublicPath } from "@/lib/auth/config";
 // ownership are still enforced server-side in Server Actions (docs/auth.md).
 const { auth } = NextAuth(authConfig);
 
-export default auth((req) => {
+// Next.js 16 expects the proxy handler as a named `proxy` export (it wraps this
+// in its own runtime adapter); a bare `export default` breaks the Node-runtime
+// proxy loader ("adapterFn is not a function"). Auth.js recommends this shape too.
+export const proxy = auth((req) => {
   const { nextUrl } = req;
   const { pathname } = nextUrl;
 

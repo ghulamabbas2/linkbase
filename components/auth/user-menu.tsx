@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { signOutAction } from "@/app/(auth)/actions";
@@ -62,6 +63,14 @@ export function UserMenu({ email, handle }: UserMenuProps) {
               <p className="truncate text-xs text-gray-500">{email}</p>
             ) : null}
           </div>
+          <Link
+            href="/dashboard"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block w-full border-b border-gray-100 px-4 py-3 text-left text-sm font-medium text-ink hover:bg-gray-100"
+          >
+            Dashboard
+          </Link>
           <form action={signOutAction}>
             <button
               type="submit"

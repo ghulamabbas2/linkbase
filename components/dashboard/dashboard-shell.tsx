@@ -8,12 +8,12 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
+import Link from "next/link";
 
 import type { LinkDTO } from "@/lib/dashboard/links";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
 import { SidebarNav } from "@/components/ui/sidebar-nav";
 
 import { LinksWorkspace } from "./links-workspace";
@@ -51,9 +51,13 @@ export function DashboardShell({ handle, links }: DashboardShellProps) {
       <div className="min-h-[calc(100dvh-56px)] rounded-t-[24px] bg-gray-100">
         {/* URL bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-7">
-          <IconButton variant="ghost" label="Back">
+          <Link
+            href="/"
+            aria-label="Back to home"
+            className="inline-flex size-11 items-center justify-center rounded-full border border-transparent bg-transparent text-gray-500 transition-[background-color,color,transform] duration-150 hover:bg-gray-100 hover:text-ink active:scale-[.94] motion-reduce:transition-none motion-reduce:active:scale-100 [&_svg]:size-5"
+          >
             <ArrowLeft />
-          </IconButton>
+          </Link>
           <a
             href={`/user/${handle}`}
             target="_blank"
