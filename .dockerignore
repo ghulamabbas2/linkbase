@@ -1,0 +1,40 @@
+# Keep the build context small and secret-free.
+
+# dependencies & build output (reinstalled/rebuilt inside the image)
+node_modules
+.next
+out
+build
+coverage
+
+# secrets & local env — never copy into the image
+.env
+.env.*
+!.env.example
+*.pem
+
+# version control & CI
+.git
+.gitignore
+.github
+
+# docker
+Dockerfile
+.dockerignore
+
+# tooling & editor
+.vscode
+.idea
+.DS_Store
+npm-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+
+# vercel & local artifacts
+.vercel
+.playwright-mcp
+plans
+
+# docs (not needed at runtime)
+docs
+README.md

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { signInSchema, signUpSchema } from "./auth";
 
 // Helper mirroring how the Server Actions read field errors (app/(auth)/actions.ts).
-function fieldErrors(error: z.ZodError) {
+function fieldErrors<T>(error: z.ZodError<T>) {
   return z.flattenError(error).fieldErrors;
 }
 

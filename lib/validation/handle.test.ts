@@ -4,7 +4,7 @@ import { z } from "zod";
 import { selectHandleSchema } from "./handle";
 
 // Helper mirroring how the Server Actions read field errors (app/onboarding/actions.ts).
-function fieldErrors(error: z.ZodError) {
+function fieldErrors<T>(error: z.ZodError<T>) {
   return z.flattenError(error).fieldErrors;
 }
 
