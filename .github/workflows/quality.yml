@@ -1,0 +1,29 @@
+name: Quality
+
+# Reusable quality gate. Builds the Dockerfile's `builder` stage, which runs
+# lint -> typecheck -> tests -> production build in a pinned, reproducible
+# environment. Any failure fails this workflow and blocks the calling deploy.
+on:
+  workflow_call:
+
+jobs:
+  checks:
+    name: Lint · Typecheck · Test · Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run quality gate (Docker builder stage)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: builder
+          push: false
+          load: false
+          # Speed up repeat runs without persisting any secret material.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
