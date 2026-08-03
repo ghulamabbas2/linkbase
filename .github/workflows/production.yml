@@ -18,30 +18,62 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
-  # --- Gate: same Docker checks as previews, re-run against merged main ------
-  verify:
-    name: Verify (Docker)
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
 
-      - name: Run checks in Docker image
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test
+
+  # Validates the production Docker image (and the in-image build) stays green.
+  docker-build:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build runtime image
         uses: docker/build-push-action@v6
         with:
           context: .
-          target: ci # runs build + lint + typecheck + test; fails on any error
           push: false
           load: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # --- Deploy to production: only after `verify` is green -------------------
+  # --- Deploy to production: only after every check above is green ----------
   deploy-production:
     name: Deploy to Vercel Production
-    needs: verify
+    needs: [lint, typecheck, test, docker-build]
     runs-on: ubuntu-latest
     environment:
       name: production

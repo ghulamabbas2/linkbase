@@ -6,11 +6,11 @@ How Linkbase ships to production. The app is hosted on **Vercel** and deployed t
 
 | File | Purpose |
 | --- | --- |
-| `Dockerfile` | Multi-stage build: `deps` → `builder` → `ci` (runs the checks) → `runner` (minimal non-root runtime image, standalone output). |
+| `Dockerfile` | Multi-stage build: `deps` → `builder` → `ci` (reproduce all checks locally) → `runner` (minimal non-root runtime image, standalone output). |
 | `.dockerignore` | Keeps the build context small and secret-free (`node_modules`, `.env*`, `.git`, etc.). |
 | `next.config.ts` | `output: "standalone"` + pinned `outputFileTracingRoot` for the Docker image, plus baseline security headers. |
-| `.github/workflows/preview.yml` | PR → Docker checks → **Vercel Preview**, comments the URL on the PR. |
-| `.github/workflows/production.yml` | Push to `main` → Docker checks → **Vercel Production**. |
+| `.github/workflows/preview.yml` | PR → `lint`/`typecheck`/`test`/`docker-build` jobs → **Vercel Preview**, comments the URL on the PR. |
+| `.github/workflows/production.yml` | Push to `main` → same check jobs → **Vercel Production**. |
 
 ## Principles
 
@@ -25,10 +25,9 @@ How Linkbase ships to production. The app is hosted on **Vercel** and deployed t
 
 When a pull request is opened (or updated) from a `feat/*` / `fix/*` branch, the pipeline:
 
-1. Checks out the branch and builds the **Docker image** for a clean, consistent environment.
-2. Runs the **checks** (lint, typecheck, tests) inside that image.
-3. On green, deploys a **Preview build** to Vercel with a unique, isolated preview URL.
-4. Posts the preview URL back on the PR so reviewers can test the change **in isolation** — its own deployment, its own environment variables — without affecting production or other branches.
+1. Runs the **check jobs** in parallel — `lint`, `typecheck`, `test`, and `docker-build` (which builds the production image).
+2. On green, the `deploy-preview` job builds and deploys a **Preview build** to Vercel with a unique, isolated preview URL.
+3. Posts the preview URL back on the PR so reviewers can test the change **in isolation** — its own deployment, its own environment variables — without affecting production or other branches.
 
 Every push to the PR redeploys the preview, so the URL always reflects the latest commit. Preview deployments use the **Preview** environment's variables in Vercel (see below), never production secrets.
 
@@ -36,33 +35,32 @@ Every push to the PR redeploys the preview, so the URL always reflects the lates
 
 When a PR is **merged into `main`**, the pipeline:
 
-1. Builds the Docker image from `main`.
-2. Runs the full **checks** again against the merged result.
-3. On green, deploys to **Vercel Production**, promoting the build to the production domain.
+1. Runs the same **check jobs** (`lint`, `typecheck`, `test`, `docker-build`) against the merged result.
+2. On green, the `deploy-production` job deploys to **Vercel Production**, promoting the build to the production domain.
 
 Because `main` only advances through reviewed, check-passing PRs, production deploys are the byproduct of a merge — not a separate manual step.
 
 ## Required checks (must pass before any deploy)
 
-These run in CI inside the Docker image for both flows. If any fails, the deploy does not happen.
+Each runs as its **own GitHub Actions job** (on the runner, via `actions/setup-node` with npm caching) so its status shows separately on the PR. The `deploy` job declares `needs: [lint, typecheck, test, docker-build]`, so if any one is red the deploy job never starts.
 
-| Check | Command | Catches |
+| Job | Command | Catches |
 | --- | --- | --- |
 | **Lint** | `npm run lint` | Style and correctness issues (Next.js ESLint flat config) |
-| **Typecheck** | `npx tsc --noEmit` | Type errors across the strict TypeScript project |
-| **Unit tests** | `npm run test` | Broken pure logic and Zod schemas (Vitest) — see [testing.md](./testing.md) |
-| **Build** | `npm run build` | Compilation/build-time failures before they reach a live environment |
+| **Typecheck** | `npm run typecheck` (`tsc --noEmit`) | Type errors across the strict TypeScript project |
+| **Test** | `npm run test` (`vitest run`) | Broken pure logic and Zod schemas — see [testing.md](./testing.md) |
+| **Docker image build** | `docker build .` | The production image / in-image `next build` breaking |
 
 End-to-end QA (Playwright MCP via the `run-qa-suite` skill) is **not** part of the automated pipeline — it is run locally against the test database, as described in [testing.md](./testing.md). Preview deployments are the place to exercise a change end-to-end after CI passes.
 
 ## Dockerized build
 
-CI runs the checks by building the Docker image up to its **`ci` target** (`docker build --target ci .`) — the same image the runtime is built from — so lint, typecheck, tests, and the production build all execute in one pinned environment:
+The `Dockerfile` is a multi-stage build (`deps` → `builder` → `ci` → `runner`). The `docker-build` CI job builds the **runtime image** to keep it green; the checks themselves run as separate runner jobs (above), and the `ci` stage exists so you can reproduce all checks in one pinned image locally with `docker build --target ci .`.
 
 - **Pinned base image** — a fixed Node LTS version matching local development, so the toolchain never drifts.
 - **Pinned dependencies** — installed from `package-lock.json` with `npm ci` (exact, reproducible installs), and `next@16.2.12` pinned in `package.json`.
 - **`.dockerignore`** excludes `node_modules`, `.env*`, and local artifacts so secrets and machine-specific files never enter the image.
-- The image is what runs lint, typecheck, tests, and the production build — the same steps a developer can run locally against the same image to reproduce a CI failure exactly.
+- **Standalone runtime** — the `runner` stage runs Next.js standalone output as a non-root user with a healthcheck; build-time env placeholders are passed inline to `next build` only and never reach the runtime image.
 
 ## Environment variables and secrets
 
