@@ -1,0 +1,46 @@
+# Local production-parity stack: the app built from the production Dockerfile,
+# plus a MongoDB instance. This mirrors how the image runs in production
+# (non-root, standalone server) so you can smoke-test the container before it
+# ever reaches Vercel.
+#
+#   docker compose up --build
+#
+# Secrets are read from your gitignored .env.local (see .env.example) — nothing
+# secret is committed here. AUTH_SECRET is required; MONGODB_URI is overridden
+# below to point at the bundled `mongo` service.
+
+services:
+  app:
+    build:
+      context: .
+      target: runner
+    ports:
+      - "3000:3000"
+    # Pull secrets (e.g. AUTH_SECRET) from your gitignored .env.local.
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      NODE_ENV: production
+      # Override MONGODB_URI to the compose-managed database. Values under
+      # `environment` take precedence over anything in env_file.
+      MONGODB_URI: mongodb://mongo:27017/linkbase
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

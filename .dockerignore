@@ -1,0 +1,44 @@
+# Keep the build context small and never leak local/dev artifacts or secrets.
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build output
+.next
+out
+build
+*.tsbuildinfo
+next-env.d.ts
+
+# Env / secrets — never copy real secrets into an image
+.env
+.env.*
+!.env.example
+
+# VCS & CI
+.git
+.gitignore
+.github
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Editor / OS
+.DS_Store
+.vscode
+.idea
+*.pem
+
+# Tests / tooling caches
+coverage
+.playwright-mcp
+.vercel
+
+# Docs & local plans (not needed in the image)
+docs
+plans
+README.md
